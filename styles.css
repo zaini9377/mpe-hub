@@ -6,3 +6,4 @@
 @media(max-width:390px){.metric-grid{grid-template-columns:1fr}.connection-banner{display:block}.connection-banner button{margin-top:10px}.reading-grid{grid-template-columns:repeat(3,1fr)}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
 .nav-link{text-decoration:none;font-size:13px}.doc-top-link{color:var(--forest);font-size:11px;font-weight:700;text-decoration:none;padding:9px 12px;border:1px solid #d8ded6;border-radius:10px;background:#fff}
+.danger{background:#fde5e3;color:#8b312b}

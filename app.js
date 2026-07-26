@@ -86,7 +86,14 @@
   }
   function renderSummary(s){
     $("#metric-logbook").textContent=s.logbook??0;$("#metric-assets").textContent=s.assets??0;$("#metric-tests").textContent=`${s.passRate??0}%`;$("#metric-actions").textContent=s.actions??0;$("#hero-count").textContent=s.total??0;$("#log-today").textContent=String(s.logToday??0).padStart(2,"0");$("#asset-active").textContent=String(s.assets??0).padStart(2,"0");$("#test-rate").textContent=`${s.passRate??0}%`;
-    $("#activity-list").innerHTML=s.recent?.length?s.recent.map(item=>{const type=item.module==="asset"?"PA9":item.module==="mccb"?"TEST":"LOG";const klass=item.module==="asset"?"type-asset":item.module==="mccb"?"type-test":"type-log";const badge=/lengkap|lulus/i.test(item.status)?"success":"warning";return `<div class="activity-row"><span class="activity-type ${klass}">${type}</span><div><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.meta||"")}</small></div><span class="badge ${badge}">${escapeHtml(item.status||"")}</span></div>`;}).join(""):`<div class="empty-state"><strong>Belum ada rekod</strong><small>Aktiviti pertama anda akan dipaparkan di sini.</small></div>`;
+    $("#activity-list").innerHTML=s.recent?.length?s.recent.map(item=>{const type=item.module==="asset"?"PA9":item.module==="mccb"?"TEST":"LOG";const klass=item.module==="asset"?"type-asset":item.module==="mccb"?"type-test":"type-log";const badge=statusClass(item.status);return `<div class="activity-row"><span class="activity-type ${klass}">${type}</span><div><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.meta||"")}</small></div><span class="badge ${badge}">${escapeHtml(statusLabel(item.status))}</span></div>`;}).join(""):`<div class="empty-state"><strong>Belum ada rekod</strong><small>Aktiviti pertama anda akan dipaparkan di sini.</small></div>`;
+  }
+  function statusLabel(status){return /^pass$/i.test(String(status||"").trim())?"Lulus":status||"";}
+  function statusClass(status){
+    const value=String(status||"").trim().toLowerCase();
+    if(["pass","lulus","lengkap","dipulangkan"].includes(value))return "success";
+    if(["fail","gagal","tidak lulus","tidak lengkap"].includes(value))return "danger";
+    return "warning";
   }
   function escapeHtml(v){const d=document.createElement("div");d.textContent=String(v);return d.innerHTML;}
   function showToast(message,isError=false){const toast=$("#toast");toast.textContent=message;toast.className=`toast show${isError?" error":""}`;clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>toast.className="toast",3600);}
