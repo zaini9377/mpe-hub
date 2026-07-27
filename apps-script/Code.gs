@@ -7,6 +7,7 @@ const APP = {
   spreadsheetName: 'MPE Hub - Pangkalan Data',
   folderName: 'MPE Hub - Lampiran',
   projectCardFolderName: 'MPE Hub - Kad Projek Kumpulan',
+  moduleTwoMemoFolderName: 'MPE Hub - Memo Modul 2',
   sheets: {
     logbook: ['Record ID','Timestamp','Nama','No. Pekerja','Bahagian','Makmal','Tarikh','Masa Masuk','Masa Keluar','Aktiviti','Pegawai','Butiran','Status','Lampiran URL'],
     asset: ['Record ID','Timestamp','No. Permohonan','Nama Pemohon','Jawatan','Bahagian','Tujuan','Tempat Digunakan','Nama Pengeluar','Tarikh Permohonan','Status','Butiran Aset'],
@@ -32,6 +33,7 @@ function handleRequest(payload) {
   if (payload.action === 'dashboard') return {ok:true,summary:getDashboardSummary()};
   if (payload.action === 'save') return saveRecord(payload.module, payload.data || {});
   if (payload.action === 'createProjectCard') return createProjectCard(payload.data || {});
+  if (payload.action === 'createModuleTwoMemo') return createModuleTwoMemo(payload.data || {});
   return {ok:false,error:'Tindakan tidak dikenali'};
 }
 
@@ -107,6 +109,88 @@ function authorizeProjectCard() {
   doc.saveAndClose();
   DriveApp.getFileById(doc.getId()).setTrashed(true);
   Logger.log('Kebenaran Google Docs berjaya disahkan. Fail pemeriksaan telah dipindahkan ke Trash.');
+}
+
+function createModuleTwoMemo(data) {
+  data = data || {};
+  const groupName = cleanText(data.groupName, 120);
+  const title = cleanText(data.title, 180);
+  const sourceUrl = cleanText(data.sourceUrl, 1000);
+  const sections = Array.isArray(data.sections) ? data.sections : [];
+  if (!groupName) return {ok:false,error:'Nama kumpulan diperlukan'};
+  if (!title) return {ok:false,error:'Tajuk projek diperlukan'};
+  if (!sections.length) return {ok:false,error:'Kandungan memo tidak lengkap'};
+
+  const lock = LockService.getScriptLock(); lock.waitLock(20000);
+  try {
+    const props = PropertiesService.getScriptProperties();
+    let folderId = props.getProperty('MODULE_TWO_MEMO_FOLDER_ID');
+    let folder;
+    if (folderId) {
+      try { folder = DriveApp.getFolderById(folderId); } catch (error) { folder = null; }
+    }
+    if (!folder) {
+      folder = DriveApp.createFolder(APP.moduleTwoMemoFolderName);
+      props.setProperty('MODULE_TWO_MEMO_FOLDER_ID', folder.getId());
+    }
+
+    const now = new Date();
+    const timezone = Session.getScriptTimeZone() || 'Asia/Kuala_Lumpur';
+    const timestamp = Utilities.formatDate(now, timezone, 'yyyyMMdd-HHmmss');
+    const documentName = 'Memo Percubaan Kecil - ' + safeFileName(groupName) + ' - ' + timestamp;
+    const doc = DocumentApp.create(documentName);
+    const body = doc.getBody();
+    body.clear();
+    body.appendParagraph('DRAF — UNTUK LATIHAN SAHAJA').setHeading(DocumentApp.ParagraphHeading.SUBTITLE);
+    body.appendParagraph('MEMO CADANGAN PERCUBAAN KECIL').setHeading(DocumentApp.ParagraphHeading.TITLE);
+    body.appendParagraph(title).setHeading(DocumentApp.ParagraphHeading.HEADING1);
+    body.appendParagraph('Kumpulan: ' + groupName);
+    body.appendParagraph('Tarikh: [PERLU PENGESAHAN]');
+    body.appendParagraph('Kepada: [PERLU PENGESAHAN]');
+    body.appendParagraph('Daripada: [PERLU PENGESAHAN]');
+    body.appendParagraph('No. rujukan: [PERLU PENGESAHAN]');
+    if (sourceUrl) {
+      const source = body.appendParagraph('Kad Projek Modul 1: ');
+      source.appendText(sourceUrl).setLinkUrl(sourceUrl);
+    }
+    body.appendParagraph('Dijana pada ' + Utilities.formatDate(now, timezone, 'dd MMMM yyyy, HH:mm'));
+    body.appendHorizontalRule();
+
+    sections.forEach(function(section) {
+      const heading = cleanText(section.heading, 160);
+      const items = Array.isArray(section.items) ? section.items : [];
+      if (!heading || !items.length) return;
+      body.appendParagraph(heading).setHeading(DocumentApp.ParagraphHeading.HEADING2);
+      items.forEach(function(item) {
+        const label = cleanText(item.label, 200);
+        const value = cleanText(item.value, 3000);
+        if (!label || !value) return;
+        const paragraph = body.appendParagraph('');
+        paragraph.appendText(label + ': ').setBold(true);
+        paragraph.appendText(value);
+      });
+    });
+
+    body.appendHorizontalRule();
+    body.appendParagraph('SEMAKAN MANUSIA WAJIB').setHeading(DocumentApp.ParagraphHeading.HEADING2);
+    body.appendListItem('Semak semua fakta dan gantikan [PERLU PENGESAHAN].');
+    body.appendListItem('Sahkan risiko, kawalan, pemilik dan ukuran kejayaan.');
+    body.appendListItem('Kelulusan akhir kekal pada pegawai yang diberi kuasa.');
+    body.appendParagraph('Dokumen ini ialah hasil latihan dan bukan rekod atau kelulusan rasmi.').setItalic(true);
+    doc.saveAndClose();
+
+    const file = DriveApp.getFileById(doc.getId());
+    file.moveTo(folder);
+    let sharingWarning = '';
+    try {
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.EDIT);
+    } catch (error) {
+      sharingWarning = 'Dokumen dicipta tetapi polisi organisasi menghalang perkongsian pautan. Fasilitator perlu berkongsi dokumen secara manual.';
+    }
+    return {ok:true,documentId:doc.getId(),documentUrl:doc.getUrl(),documentName:documentName,sharingWarning:sharingWarning};
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function cleanText(value, maxLength) {
