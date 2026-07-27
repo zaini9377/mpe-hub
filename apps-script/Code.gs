@@ -8,6 +8,7 @@ const APP = {
   folderName: 'MPE Hub - Lampiran',
   projectCardFolderName: 'MPE Hub - Kad Projek Kumpulan',
   moduleTwoMemoFolderName: 'MPE Hub - Memo Modul 2',
+  moduleTwoLetterFolderName: 'MPE Hub - Surat Rasmi Modul 2',
   sheets: {
     logbook: ['Record ID','Timestamp','Nama','No. Pekerja','Bahagian','Makmal','Tarikh','Masa Masuk','Masa Keluar','Aktiviti','Pegawai','Butiran','Status','Lampiran URL'],
     asset: ['Record ID','Timestamp','No. Permohonan','Nama Pemohon','Jawatan','Bahagian','Tujuan','Tempat Digunakan','Nama Pengeluar','Tarikh Permohonan','Status','Butiran Aset'],
@@ -34,6 +35,7 @@ function handleRequest(payload) {
   if (payload.action === 'save') return saveRecord(payload.module, payload.data || {});
   if (payload.action === 'createProjectCard') return createProjectCard(payload.data || {});
   if (payload.action === 'createModuleTwoMemo') return createModuleTwoMemo(payload.data || {});
+  if (payload.action === 'createModuleTwoLetter') return createModuleTwoLetter(payload.data || {});
   return {ok:false,error:'Tindakan tidak dikenali'};
 }
 
@@ -177,6 +179,79 @@ function createModuleTwoMemo(data) {
     body.appendListItem('Sahkan risiko, kawalan, pemilik dan ukuran kejayaan.');
     body.appendListItem('Kelulusan akhir kekal pada pegawai yang diberi kuasa.');
     body.appendParagraph('Dokumen ini ialah hasil latihan dan bukan rekod atau kelulusan rasmi.').setItalic(true);
+    doc.saveAndClose();
+
+    const file = DriveApp.getFileById(doc.getId());
+    file.moveTo(folder);
+    let sharingWarning = '';
+    try {
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.EDIT);
+    } catch (error) {
+      sharingWarning = 'Dokumen dicipta tetapi polisi organisasi menghalang perkongsian pautan. Fasilitator perlu berkongsi dokumen secara manual.';
+    }
+    return {ok:true,documentId:doc.getId(),documentUrl:doc.getUrl(),documentName:documentName,sharingWarning:sharingWarning};
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function createModuleTwoLetter(data) {
+  data = data || {};
+  const sender = cleanText(data.sender, 300);
+  const recipient = cleanText(data.recipient, 500);
+  const reference = cleanText(data.reference, 200);
+  const letterDate = cleanText(data.letterDate, 120);
+  const salutation = cleanText(data.salutation, 120) || 'Tuan/Puan,';
+  const subject = cleanText(data.subject, 300);
+  const bodyText = cleanText(data.body, 12000);
+  const contact = cleanText(data.contact, 500);
+  const signatory = cleanText(data.signatory, 300) || '[PENANDATANGAN PERLU PENGESAHAN]';
+  if (!sender) return {ok:false,error:'Maklumat pengirim diperlukan'};
+  if (!recipient) return {ok:false,error:'Maklumat penerima diperlukan'};
+  if (!subject) return {ok:false,error:'Perkara surat diperlukan'};
+  if (!bodyText) return {ok:false,error:'Kandungan surat diperlukan'};
+
+  const lock = LockService.getScriptLock(); lock.waitLock(20000);
+  try {
+    const props = PropertiesService.getScriptProperties();
+    let folderId = props.getProperty('MODULE_TWO_LETTER_FOLDER_ID');
+    let folder;
+    if (folderId) {
+      try { folder = DriveApp.getFolderById(folderId); } catch (error) { folder = null; }
+    }
+    if (!folder) {
+      folder = DriveApp.createFolder(APP.moduleTwoLetterFolderName);
+      props.setProperty('MODULE_TWO_LETTER_FOLDER_ID', folder.getId());
+    }
+
+    const now = new Date();
+    const timezone = Session.getScriptTimeZone() || 'Asia/Kuala_Lumpur';
+    const timestamp = Utilities.formatDate(now, timezone, 'yyyyMMdd-HHmmss');
+    const documentName = 'SIMULASI Surat Rasmi DRAF - ' + safeFileName(subject) + ' - ' + timestamp;
+    const doc = DocumentApp.create(documentName);
+    const body = doc.getBody();
+    body.clear();
+    body.appendParagraph('DRAF — UNTUK LATIHAN SAHAJA').setHeading(DocumentApp.ParagraphHeading.SUBTITLE);
+    body.appendParagraph('Ruj. Kami: ' + (reference || '[PERLU PENGESAHAN]'));
+    body.appendParagraph('Tarikh: ' + (letterDate || '[PERLU PENGESAHAN]'));
+    body.appendParagraph('');
+    recipient.split(/\n+/).forEach(function(line) { if (line.trim()) body.appendParagraph(line.trim()); });
+    body.appendParagraph('');
+    body.appendParagraph(salutation);
+    body.appendParagraph(subject.toUpperCase()).setBold(true);
+    body.appendParagraph('');
+    bodyText.split(/\n\s*\n/).forEach(function(paragraph) {
+      const cleanParagraph = cleanText(paragraph, 3000);
+      if (cleanParagraph) body.appendParagraph(cleanParagraph);
+    });
+    body.appendParagraph('');
+    body.appendParagraph('Sekian, terima kasih.');
+    body.appendParagraph('');
+    body.appendParagraph(signatory).setBold(true);
+    body.appendParagraph(sender);
+    if (contact) body.appendParagraph('Pegawai hubungan: ' + contact);
+    body.appendHorizontalRule();
+    body.appendParagraph('Dokumen simulasi. Semak semua fakta, tandakan maklumat belum lengkap dan dapatkan kelulusan pegawai berkuasa sebelum sebarang penggunaan rasmi.').setItalic(true);
     doc.saveAndClose();
 
     const file = DriveApp.getFileById(doc.getId());
