@@ -6,6 +6,7 @@
 const APP = {
   spreadsheetName: 'MPE Hub - Pangkalan Data',
   folderName: 'MPE Hub - Lampiran',
+  projectCardFolderName: 'MPE Hub - Kad Projek Kumpulan',
   sheets: {
     logbook: ['Record ID','Timestamp','Nama','No. Pekerja','Bahagian','Makmal','Tarikh','Masa Masuk','Masa Keluar','Aktiviti','Pegawai','Butiran','Status','Lampiran URL'],
     asset: ['Record ID','Timestamp','No. Permohonan','Nama Pemohon','Jawatan','Bahagian','Tujuan','Tempat Digunakan','Nama Pengeluar','Tarikh Permohonan','Status','Butiran Aset'],
@@ -30,7 +31,90 @@ function handleRequest(payload) {
   ensureSetup();
   if (payload.action === 'dashboard') return {ok:true,summary:getDashboardSummary()};
   if (payload.action === 'save') return saveRecord(payload.module, payload.data || {});
+  if (payload.action === 'createProjectCard') return createProjectCard(payload.data || {});
   return {ok:false,error:'Tindakan tidak dikenali'};
+}
+
+function createProjectCard(data) {
+  data = data || {};
+  const groupName = cleanText(data.groupName, 120);
+  const title = cleanText(data.title, 180);
+  const sections = Array.isArray(data.sections) ? data.sections : [];
+  if (!groupName) return {ok:false,error:'Nama kumpulan diperlukan'};
+  if (!title) return {ok:false,error:'Tajuk peluang diperlukan'};
+  if (!sections.length) return {ok:false,error:'Jawapan kanvas tidak lengkap'};
+
+  const lock = LockService.getScriptLock(); lock.waitLock(20000);
+  try {
+    const props = PropertiesService.getScriptProperties();
+    let folderId = props.getProperty('PROJECT_CARD_FOLDER_ID');
+    let folder;
+    if (folderId) {
+      try { folder = DriveApp.getFolderById(folderId); } catch (error) { folder = null; }
+    }
+    if (!folder) {
+      folder = DriveApp.createFolder(APP.projectCardFolderName);
+      props.setProperty('PROJECT_CARD_FOLDER_ID', folder.getId());
+    }
+
+    const timestamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone() || 'Asia/Kuala_Lumpur', 'yyyyMMdd-HHmmss');
+    const documentName = 'Kad Projek - ' + safeFileName(groupName) + ' - ' + timestamp;
+    const doc = DocumentApp.create(documentName);
+    const body = doc.getBody();
+    body.clear();
+    body.appendParagraph('KAD PROJEK KUMPULAN').setHeading(DocumentApp.ParagraphHeading.TITLE);
+    body.appendParagraph(title).setHeading(DocumentApp.ParagraphHeading.HEADING1);
+    body.appendParagraph('Kumpulan: ' + groupName);
+    body.appendParagraph('Dijana daripada Kanvas Peluang Produktiviti MPE pada ' + Utilities.formatDate(new Date(), Session.getScriptTimeZone() || 'Asia/Kuala_Lumpur', 'dd MMMM yyyy, HH:mm'));
+    body.appendHorizontalRule();
+
+    sections.forEach(function(section) {
+      const heading = cleanText(section.heading, 160);
+      const items = Array.isArray(section.items) ? section.items : [];
+      if (!heading || !items.length) return;
+      body.appendParagraph(heading).setHeading(DocumentApp.ParagraphHeading.HEADING2);
+      items.forEach(function(item) {
+        const label = cleanText(item.label, 200);
+        const value = cleanText(item.value, 2000);
+        if (!label || !value) return;
+        const paragraph = body.appendParagraph('');
+        paragraph.appendText(label + ': ').setBold(true);
+        paragraph.appendText(value);
+      });
+    });
+
+    body.appendHorizontalRule();
+    body.appendParagraph('Dokumen latihan — gunakan data rekaan sahaja. Semakan dan kelulusan manusia masih diperlukan.').setItalic(true);
+    doc.saveAndClose();
+
+    const file = DriveApp.getFileById(doc.getId());
+    file.moveTo(folder);
+    let sharingWarning = '';
+    try {
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.EDIT);
+    } catch (error) {
+      sharingWarning = 'Dokumen dicipta tetapi polisi organisasi menghalang perkongsian pautan. Fasilitator perlu berkongsi dokumen secara manual.';
+    }
+    return {ok:true,documentId:doc.getId(),documentUrl:doc.getUrl(),documentName:documentName,sharingWarning:sharingWarning};
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function authorizeProjectCard() {
+  const doc = DocumentApp.create('MPE Hub - Pemeriksaan Kebenaran Google Docs');
+  doc.getBody().appendParagraph('Fail sementara untuk mengesahkan kebenaran penciptaan Kad Projek Kumpulan.');
+  doc.saveAndClose();
+  DriveApp.getFileById(doc.getId()).setTrashed(true);
+  Logger.log('Kebenaran Google Docs berjaya disahkan. Fail pemeriksaan telah dipindahkan ke Trash.');
+}
+
+function cleanText(value, maxLength) {
+  return String(value == null ? '' : value).replace(/[\u0000-\u001F\u007F]/g, ' ').trim().slice(0, maxLength || 2000);
+}
+
+function safeFileName(value) {
+  return cleanText(value, 80).replace(/[\\/:*?"<>|]/g, '-');
 }
 
 function ensureSetup() {
