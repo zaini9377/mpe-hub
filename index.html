@@ -63,26 +63,22 @@
           <div class="hero-visual" aria-hidden="true">
             <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
             <div class="pulse-card"><span>STATUS OPERASI</span><strong>Makmal aktif</strong><small><i></i> Sistem sedia digunakan</small></div>
-            <div class="mini-stat"><span id="hero-count">24</span><small>rekod bulan ini</small></div>
+            <div class="mini-stat"><span id="hero-count">—</span><small>rekod bulan ini</small></div>
           </div>
         </div>
 
         <div class="section-heading"><div><p class="eyebrow">RINGKASAN</p><h2>Prestasi semasa</h2></div><button class="ghost-button" id="refresh-dashboard">Segar semula</button></div>
         <div class="metric-grid">
-          <article class="metric-card accent-lime"><div class="metric-top"><span class="metric-code">LOG</span><span class="trend">Bulan ini</span></div><strong id="metric-logbook">18</strong><p>Aktiviti makmal</p><div class="metric-bar"><i style="width:72%"></i></div></article>
-          <article class="metric-card accent-orange"><div class="metric-top"><span class="metric-code">PA9</span><span class="trend">Sedang dipinjam</span></div><strong id="metric-assets">4</strong><p>Aset alih aktif</p><div class="metric-bar"><i style="width:46%"></i></div></article>
-          <article class="metric-card accent-cyan"><div class="metric-top"><span class="metric-code">MCCB</span><span class="trend">Kadar lulus</span></div><strong id="metric-tests">96%</strong><p>Ujian berjaya</p><div class="metric-bar"><i style="width:96%"></i></div></article>
-          <article class="metric-card accent-red"><div class="metric-top"><span class="metric-code">ACT</span><span class="trend">Perlu tindakan</span></div><strong id="metric-actions">2</strong><p>Rekod belum lengkap</p><div class="metric-bar"><i style="width:20%"></i></div></article>
+          <article class="metric-card accent-lime"><div class="metric-top"><span class="metric-code">LOG</span><span class="trend">Bulan ini</span></div><strong id="metric-logbook">—</strong><p>Aktiviti makmal</p><div class="metric-bar"><i style="width:72%"></i></div></article>
+          <article class="metric-card accent-orange"><div class="metric-top"><span class="metric-code">PA9</span><span class="trend">Sedang dipinjam</span></div><strong id="metric-assets">—</strong><p>Aset alih aktif</p><div class="metric-bar"><i style="width:46%"></i></div></article>
+          <article class="metric-card accent-cyan"><div class="metric-top"><span class="metric-code">MCCB</span><span class="trend">Kadar lulus</span></div><strong id="metric-tests">—</strong><p>Ujian berjaya</p><div class="metric-bar"><i style="width:96%"></i></div></article>
+          <article class="metric-card accent-red"><div class="metric-top"><span class="metric-code">ACT</span><span class="trend">Perlu tindakan</span></div><strong id="metric-actions">—</strong><p>Rekod belum lengkap</p><div class="metric-bar"><i style="width:20%"></i></div></article>
         </div>
 
         <div class="dashboard-grid">
           <section class="panel activity-panel">
             <div class="panel-head"><div><p class="eyebrow">TERKINI</p><h3>Aktiviti terbaru</h3></div><button class="icon-button" aria-label="Lihat semua">↗</button></div>
-            <div class="activity-list" id="activity-list">
-              <div class="activity-row"><span class="activity-type type-log">LOG</span><div><strong>Kalibrasi alat pengujian</strong><small>Makmal Elektrik · 09:42</small></div><span class="badge success">Lengkap</span></div>
-              <div class="activity-row"><span class="activity-type type-asset">PA9</span><div><strong>Pinjaman Power Clamp Meter</strong><small>MPE-EL-024 · Semalam</small></div><span class="badge warning">Dipinjam</span></div>
-              <div class="activity-row"><span class="activity-type type-test">TEST</span><div><strong>MCCB 100A · Schneider</strong><small>TR-2026-041 · 14 Jul</small></div><span class="badge success">Lulus</span></div>
-            </div>
+            <div class="activity-list" id="activity-list"><div class="empty-state"><strong>Memuatkan data...</strong><small>Ringkasan akan dipaparkan sebentar lagi.</small></div></div>
           </section>
           <section class="panel quick-panel">
             <div class="panel-head"><div><p class="eyebrow">PINTASAN</p><h3>Tindakan pantas</h3></div></div>
@@ -94,7 +90,7 @@
       </section>
 
       <section class="page" id="logbook" data-page="logbook">
-        <div class="module-intro intro-green"><div><span class="module-number">MODUL 01</span><h2>Buku Log Makmal</h2><p>Rekod kehadiran dan aktiviti dengan bukti sokongan serta status pelaksanaan.</p></div><div class="intro-stat"><span id="log-today">03</span><small>Kehadiran hari ini</small></div></div>
+        <div class="module-intro intro-green"><div><span class="module-number">MODUL 01</span><h2>Buku Log Makmal</h2><p>Rekod kehadiran dan aktiviti dengan bukti sokongan serta status pelaksanaan.</p></div><div class="intro-stat"><span id="log-today">—</span><small>Kehadiran hari ini</small></div></div>
         <form class="data-form" id="logbook-form" data-module="logbook">
           <div class="form-section"><div class="form-section-title"><span>01</span><div><h3>Maklumat kehadiran</h3><p>Butiran pegawai dan lokasi makmal</p></div></div><div class="field-grid">
             <label class="field"><span>Nama penuh *</span><input name="nama" required placeholder="Contoh: Ahmad Firdaus"></label>
@@ -117,7 +113,7 @@
       </section>
 
       <section class="page" id="asset" data-page="asset">
-        <div class="module-intro intro-orange"><div><span class="module-number">MODUL 02 · KEW.PA-9</span><h2>Pinjaman Aset Alih</h2><p>Borang digital berdasarkan AM 2.4 Lampiran A untuk pergerakan dan pinjaman aset.</p></div><div class="intro-stat"><span id="asset-active">04</span><small>Aset sedang dipinjam</small></div></div>
+        <div class="module-intro intro-orange"><div><span class="module-number">MODUL 02 · KEW.PA-9</span><h2>Pinjaman Aset Alih</h2><p>Borang digital berdasarkan AM 2.4 Lampiran A untuk pergerakan dan pinjaman aset.</p></div><div class="intro-stat"><span id="asset-active">—</span><small>Aset sedang dipinjam</small></div></div>
         <form class="data-form" id="asset-form" data-module="asset">
           <div class="form-section"><div class="form-section-title"><span>01</span><div><h3>Maklumat pemohon</h3><p>Butiran peminjam dan tujuan penggunaan</p></div></div><div class="field-grid">
             <label class="field"><span>No. permohonan</span><input name="noPermohonan" readonly data-autono="PA9"></label>
@@ -191,6 +187,6 @@
   </dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="config.js?v=20260716-2"></script>
-  <script src="app.js?v=20260716-2"></script>
+  <script src="app.js?v=20260727-1"></script>
 </body>
 </html>
