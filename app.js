@@ -13,9 +13,9 @@
   const isConnected=()=>Boolean(config.GOOGLE_SCRIPT_URL&&/^https:\/\/script\.google\.com\/.+\/exec/.test(config.GOOGLE_SCRIPT_URL));
 
   function init(){
-    setDateDefaults(); buildAssetRow(); buildEquipment(); buildReadings(); bindNavigation(); bindDialogs(); bindForms(); bindCalculations(); updateConnectionUI(); renderSummary(demoSummary);
+    setDateDefaults(); buildAssetRow(); buildEquipment(); buildReadings(); bindNavigation(); bindDialogs(); bindForms(); bindCalculations(); updateConnectionUI();
     route(location.hash.slice(1)||"dashboard",false);
-    if(isConnected()) loadDashboard();
+    if(isConnected()){renderLoadingSummary();loadDashboard();}else renderSummary(demoSummary);
   }
   function setDateDefaults(){
     const now=new Date(); const date=now.toISOString().slice(0,10); const time=now.toTimeString().slice(0,5);
@@ -82,9 +82,23 @@
   }
   async function loadDashboard(){
     if(!isConnected()){renderSummary(demoSummary);return;} const button=$("#refresh-dashboard");button.disabled=true;button.textContent="Menyegar...";
-    try{const result=await api({action:"dashboard"});if(!result.ok)throw new Error(result.error);renderSummary(result.summary);}catch(error){showToast("Dashboard tidak dapat disegerakkan.",true);}finally{button.disabled=false;button.textContent="Segar semula";}
+    try{const result=await api({action:"dashboard"});if(!result.ok)throw new Error(result.error);renderSummary(result.summary);}catch(error){renderUnavailableSummary();showToast("Dashboard tidak dapat disegerakkan.",true);}finally{button.disabled=false;button.textContent="Segar semula";}
+  }
+  function renderLoadingSummary(){
+    setSummaryValues("—");
+    $("#dashboard").setAttribute("aria-busy","true");
+    $("#activity-list").innerHTML=`<div class="empty-state"><strong>Memuatkan data terkini...</strong><small>Sila tunggu sementara Drive disegerakkan.</small></div>`;
+  }
+  function renderUnavailableSummary(){
+    setSummaryValues("—");
+    $("#dashboard").setAttribute("aria-busy","false");
+    $("#activity-list").innerHTML=`<div class="empty-state"><strong>Data tidak tersedia</strong><small>Gunakan butang Segar semula untuk mencuba lagi.</small></div>`;
+  }
+  function setSummaryValues(value){
+    ["#metric-logbook","#metric-assets","#metric-tests","#metric-actions","#hero-count","#log-today","#asset-active","#test-rate"].forEach(selector=>$(selector).textContent=value);
   }
   function renderSummary(s){
+    $("#dashboard").setAttribute("aria-busy","false");
     $("#metric-logbook").textContent=s.logbook??0;$("#metric-assets").textContent=s.assets??0;$("#metric-tests").textContent=`${s.passRate??0}%`;$("#metric-actions").textContent=s.actions??0;$("#hero-count").textContent=s.total??0;$("#log-today").textContent=String(s.logToday??0).padStart(2,"0");$("#asset-active").textContent=String(s.assets??0).padStart(2,"0");$("#test-rate").textContent=`${s.passRate??0}%`;
     $("#activity-list").innerHTML=s.recent?.length?s.recent.map(item=>{const type=item.module==="asset"?"PA9":item.module==="mccb"?"TEST":"LOG";const klass=item.module==="asset"?"type-asset":item.module==="mccb"?"type-test":"type-log";const badge=statusClass(item.status);return `<div class="activity-row"><span class="activity-type ${klass}">${type}</span><div><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.meta||"")}</small></div><span class="badge ${badge}">${escapeHtml(statusLabel(item.status))}</span></div>`;}).join(""):`<div class="empty-state"><strong>Belum ada rekod</strong><small>Aktiviti pertama anda akan dipaparkan di sini.</small></div>`;
   }
