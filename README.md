@@ -53,3 +53,4 @@ Bahan ini disediakan sebagai kajian kes praktikal untuk Bengkel Transformasi Dig
 ## Privasi
 
 URL Apps Script membenarkan penghantaran daripada aplikasi GitHub Pages. Gunakan URL hanya dalam repositori yang sesuai untuk organisasi anda. Jika aplikasi perlu dihadkan kepada akaun organisasi sahaja, tukar akses deployment kepada domain Google Workspace dan tambah aliran log masuk yang diluluskan pentadbir.
+Perubahan ini dilakukan oleh Zaini
